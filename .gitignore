@@ -1,0 +1,17 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# exclude the content in the following folders....
+_archiv/
+01_data/1_raw
+01_data/2_processed
+02_results/
+05_misc/
+
+# ...exception these hidden dummy-files
+!01_data/1_raw/.gitkeep
+!01_data/2_processed/.gitkeep
+!02_results/.gitkeep
+!05_misc/.gitkeep
