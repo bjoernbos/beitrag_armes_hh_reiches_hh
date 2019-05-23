@@ -65,6 +65,7 @@ stations_sf <- st_as_sf(stations,
                         coords = c("lat", "long"),
                         crs = 4326)
 
+saveRDS(stations_sf, here("01_data", "2_processed", "stations_sf.RDS"))
 
 # Prepare geodata of "Statisische Stadtgebiete" in Hamburg: --------------------
 communities <- st_read(here("01_data", "1_raw", "wfs_hh_statistische_gebiete.gml"))
