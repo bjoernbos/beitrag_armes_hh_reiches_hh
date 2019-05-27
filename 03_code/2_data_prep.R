@@ -205,7 +205,10 @@ communities <- left_join(communities,
 
 # Find the relevant Stat. Gebiete around each station --------------------------
 # Consider those areas that are within a distance of 300m around each station
-communities <- st_join(communities,
+# We do not consider the Stat. Gebiet "20004" which is south the Elbe river and
+# would be considered for the station Landungsbrücke otherwise.
+
+communities <- st_join(filter(communities, statgebiet != 20004),
                        stations,
                        st_is_within_distance, dist = 300)
 
@@ -285,6 +288,11 @@ areas_around_stations$avg_kinder_mindestsicherung[areas_around_stations$station_
 areas_around_stations$avg_schulabschluss_kein_abitur[areas_around_stations$station_name == "Mönckebergstraße"] <- NA
 areas_around_stations$share_SPD[areas_around_stations$station_name == "Mönckebergstraße"] <- NA
 areas_around_stations$share_CDU[areas_around_stations$station_name == "Mönckebergstraße"] <- NA
+
+
+# Round statistics to 3 digits -------------------------------------------------
+areas_around_stations %<>% 
+  mutate_if(is.numeric, round, 3)
 
 
 # Export the dataframe with the results per station ----------------------------
