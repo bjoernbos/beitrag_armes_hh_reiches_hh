@@ -8,7 +8,8 @@ library(tmap)
 
 # Load data
 communities <- readRDS(here("01_data", "2_processed", "communities.RDS"))
-stations_sf <- readRDS(here("01_data", "2_processed", "stations_sf.RDS"))
+stations <- readRDS(here("01_data", "2_processed", "stations.RDS"))
+gtfs_shapes_u3_lines <- readRDS(here("01_data", "2_processed", "gtfs_shapes_u3_lines.RDS"))
 
 # Map indicating all Statistische Gebiete and highlight the relevant ones ------
 tmap_mode("view")
@@ -26,14 +27,18 @@ tm_shape(communities$geom,
   tm_shape(communities$geom[!is.na(communities$station_name)]) +
     tm_fill(col = "orange", alpha = 0.5) +
   
+  # + Geomtry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines() +
+  
   # + Points of Stations
-  tm_shape(stations_sf) + 
+  tm_shape(stations) + 
     tm_dots() +
 
   # + Some station names
-  tm_shape(stations_sf[stations_sf$station_name %in%
-                       c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof",
-                         "St. Pauli", "Schlump", "Kellinghusenstraße"),]) +
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
    tm_text("station_name",
             col = "black",
             shadow = TRUE,

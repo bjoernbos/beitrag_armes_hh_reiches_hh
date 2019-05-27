@@ -6,66 +6,103 @@ library(magrittr)
 library(sf)
 
 
-# Prepare the location of subway stations --------------------------------------
-stations <- readRDS(here("01_data", "1_raw", "subway_stations.RDS"))
+# Prepare GTFS data from the HVV (stations and geometry of the U3) -------------
+  # This data contains the location of the stations as well as the geometries
+  # of each line. It also contains the timetable of each trip but we are just
+  # interested in the location of each station and the geometries of the U3
 
-stations %<>% rename("station_name" = "stationLabel")
+  # The GTFS data is strucuted in a specific way. For each route there are
+  # multiple trips. The geomtries of each trip are stored as a shape.
+  # Each trip has several strop_times that can be used to get the location of
+  # each station in the table "stops".
 
-stations$station_name %<>% # drop the word "station" from some labels
-  str_remove("\\sstation") %>% 
-  str_remove("Station")
+  # For more information refer to:
+  # https://en.wikipedia.org/wiki/General_Transit_Feed_Specification
 
-stations$station_name[stations$station_name == "Hamburg Central "] <- "Hauptbahnhof"
-stations$station_name[stations$station_name == "Berliner Tor metro"] <- "Berliner Tor"
-stations$station_name[stations$station_name == "Wandsbek Gartenstadt"] <- "Wandsbek-Gartenstadt"
+## Retrieve the geometries of the U3 ----
+# 1. Import the routes and retrieve the route_id for the U3
+gtfs_routes <- read_delim(here("01_data", "1_raw", "hvv_gtfs_2019", "routes.txt"),
+                          delim = ",")
 
-# There are two records for the station Hauptbahnhof. One refers to the station
-# Hauptbahnhof and the order one to Hauptbahnhof Süd. We drop the second one
-# (Q3783676) as it is a dublicate
+route_id_u3 <- gtfs_routes %>% 
+  filter(route_short_name == "U3") %>% 
+  select(route_id) %>%
+  first() # = 8803_1
 
-stations %<>% filter(station_name != "Q3783676")
+# 2. Import the trips and retrieve the shape_id for the U3
+gtfs_trips <- read_delim(here("01_data", "1_raw", "hvv_gtfs_2019", "trips.txt"),
+                         delim = ",")
 
-# So far, we have no information on the order of the stations.
-# Hence, we add a column with the stop order of the U3
-stationss_order <- readRDS(here("01_data", "1_raw", "stations_order.RDS"))
+shape_ids_u3 <- gtfs_trips %>% 
+  filter(route_id == route_id_u3) %>% 
+  select(shape_id) %>% 
+  distinct()
 
-stations <- left_join(stations,
-                      stationss_order,
+# Note: There are 15 different shape_id as trips of the U3 can go in both
+# directions and some trips start or end at different stations
+
+# 3. Import and select the geometries (shapes) of the trips on the route U3
+gtfs_shapes <- read_delim(here("01_data", "1_raw", "hvv_gtfs_2019", "shapes.txt"),
+                          delim = ",")
+
+# Select the relevant shapes of those trips that are running on the route of the U3
+gtfs_shapes_u3 <- gtfs_shapes %>% 
+  filter(shape_id %in% shape_ids_u3$shape_id)
+
+# Transfom the single points into linestrings for each shape_id (trip)
+gtfs_shapes_u3_lines <- gtfs_shapes_u3 %>%
+  st_as_sf(coords = c("shape_pt_lon", "shape_pt_lat"),
+           crs = 4326) %>%
+  group_by(shape_id) %>% 
+  summarise(do_union = FALSE) %>% 
+  st_cast("LINESTRING")
+
+# Save the geometry of the U3
+saveRDS(gtfs_shapes_u3_lines, here("01_data", "2_processed", "gtfs_shapes_u3_lines.RDS"))
+
+## Retrieve the location of each station via the stops ----
+# 1. Retrieve the trip ids from those trips of the U3
+gtfs_trips_u3 <- gtfs_trips %>% 
+  filter(route_id ==route_id_u3) %>% 
+  select(trip_id)
+
+# 2. Retrieve the stop_ids from each trip
+gtfs_stop_times <- read_delim(here("01_data", "1_raw", "hvv_gtfs_2019", "stop_times.txt"),
+                              delim = ",")
+
+gtfs_stop_times_u3 <- gtfs_stop_times %>% 
+  filter(trip_id %in% gtfs_trips_u3$trip_id) %>% 
+  select(stop_id) %>% 
+  distinct()
+
+# 3. Retrieve the coordinates of the stations from these stops
+gtfs_stops <- read_delim(here("01_data", "1_raw", "hvv_gtfs_2019", "stops.txt"),
+                         delim = ",")
+
+# Each station has two stops as the U3 is running in both directions. Hence,
+# we only select one stop-point for each station
+gtfs_stops_u3 <- gtfs_stops %>% 
+  filter(stop_id %in% gtfs_stop_times_u3$stop_id) %>% 
+  distinct(stop_name, .keep_all = TRUE) %>% # This selects only one coordinate per station
+  filter(stop_name != "Barmbek(2)") # This stop is also a dublicate
+  
+gtfs_stops_u3_sf <- gtfs_stops_u3 %>% 
+  st_as_sf(coords = c("stop_lon", "stop_lat"),
+           crs = 4326)
+
+# 4. Finally, we add the stop order to each station
+gtfs_stops_u3_sf %<>% 
+  rename("station_name" = "stop_name")
+
+stations_order <- readRDS(here("01_data", "2_processed", "stations_order.RDS"))
+  
+stations <- left_join(gtfs_stops_u3_sf,
+                      stations_order,
                       by = "station_name")
 
-stations %<>% arrange(stop_number)
+# Save the coordinates of the stations of the U3
+saveRDS(stations, here("01_data", "2_processed", "stations.RDS"))
 
-# Now, we need to extract and reformat the coordinates of the stations
-
-# Before:
-#   stationLabel                coordinates
-#   Hamburg Central Station     Point(10.006389 53.552778)
-#   Schlump                     Point(9.97 53.56777778)
-
-# After:
-#   stationLabel            lat         long
-#   Hamburg Central Station 10.006389   53.552778
-#   Schlump                 9.97        53.56777778
-
-# Split at the whitespace
-stations %<>% 
-  separate(coordinates, c("lat", "long"), "\\s")
-
-# Extract the numbers
-stations$lat %<>%
-  str_extract("\\d{1,}.\\d{1,}") %>% # <Any number of digits from 1>.<Any digits>
-  as.double()
-
-stations$long %<>%
-  str_extract("\\d{1,}.\\d{1,}") %>% 
-  as.double()
-
-# Convert their latitude and longitude into geometries
-stations_sf <- st_as_sf(stations,
-                        coords = c("lat", "long"),
-                        crs = 4326)
-
-saveRDS(stations_sf, here("01_data", "2_processed", "stations_sf.RDS"))
 
 # Prepare geodata of "Statisische Stadtgebiete" in Hamburg: --------------------
 communities <- st_read(here("01_data", "1_raw", "wfs_hh_statistische_gebiete.gml"))
@@ -169,7 +206,7 @@ communities <- left_join(communities,
 # Find the relevant Stat. Gebiete around each station --------------------------
 # Consider those areas that are within a distance of 300m around each station
 communities <- st_join(communities,
-                       stations_sf,
+                       stations,
                        st_is_within_distance, dist = 300)
 
 # Save dataframe of communities
@@ -220,7 +257,7 @@ electoral_districts <- left_join(electoral_districts,
 
 # Derive which electoral districts are around a station ------------------------
 election_results_stations <- st_join(electoral_districts,
-                                     stations_sf,
+                                     stations,
                                      st_is_within_distance,
                                      dist = 300) %>%
   group_by(station_name) %>% 
