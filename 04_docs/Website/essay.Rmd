@@ -1,0 +1,244 @@
+---
+title: 'Nächster Halt: Armutsviertel? Eine Bahnfahrt mit der U3 durch Hamburg'
+author: "Björn Bos"
+# date: "Mai 2019"
+output:
+  html_document:
+    fig_caption: yes
+    theme: paper
+    includes: 
+      before_body: header.html
+bibliography: ../literature.bib
+biblio-style: "apalike"
+link-citations: true
+---
+
+<!-- Some CSS adjustments -->
+<style type="text/css">
+
+h1.title { /* Used for the title */
+  text-align: center
+}
+h4 { /* Used for author and date */
+  text-align: center;
+  color: grey
+}
+
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(here)
+library(sf)
+library(tmap)
+library(ggplot2)
+library(plotly)
+```
+
+
+![](header_image.jpg "Photo by Christoph Mahlstedt on Unsplash")
+
+> Dies ist ein Beitrag zum Studierendenwettbewerb "Armes Hamburg - Reiches Hamburg", welcher im Sommer 2019 an der Universität Hamburg ausgeschrieben wurde.
+
+## Motivation
+In Hamburg findet man in vielen Straßen prunkvolle Fassaden und Villen reihen sich an Alster und Elbe nebeneinander. Doch ist Hamburg damit reich? Und partizipieren alle Hamburger im gleichen Maß vom allgemein angenommen Wohlstand?
+
+So sehr das Wasser und der Hafen den Wohlstand der Stadt bedingt hat, so sehr stellt es auch unsichtbare Trennwand dar, die die Stadt in ärmere und reichere Gebiete einteilt. Während die Stadtteile nördlich der Elbe durchschnittlich reicher sind, geht es südlich der Elbe bescheidener und deutlich ärmer einher. Aber auch wenn man sich die Stadtgebiete um die Alster anschaut, wird man Ungleichheiten feststellen.
+
+Um auf solche regionalen Ungleichheiten aufmerksam zu machen, zeichnet dieser Essay eine Fahrt mit der Stadtbahn U3 nach, deren Verlauf einmal um die ganze Alster führt. Auf gut 20km führt sie durch verschiedenste Stadtgebiete und hält an 25 unterschiedlichen Stationen. Sie beginnt in Wandsbek-Gartenstadt, führt im Osten über Barmbek und Berliner Tor zum Hauptbahnhof, an der Elbe über Baumwall und Landungsbrücken nach St. Pauli, bevor sie im Westen über den Eppendorfer Baum zurück nach Wandsbek-Gartenstadt führt.
+
+Dieser Essay analysiert sozial-ökonomische Indikatoren der Stadtgebiete, die sich in unmittelbarer Nähe zu diesen Haltestellen befinden. Er gibt damit einen Eindruck welche Menschen man im Umkreis um eben jene Haltestellen trifft. Dieser Essay greift damit die Idee von @New_Yorker und @M29 auf, welche ähnliche Analysen für die New Yorker U-Bahnlinien und die Buslinie M26 in Berlin veröffentlicht haben.
+
+Dieser Essay verdeutlicht, wie nah Arm und Reich sich in Hamburg sein können. Er zeigt wie stark soziale und wirtschaftliche Indikatoren auf einer Strecke von nur 20km schwanken können und an welchen Haltestellen man welche Menschen am ehesten trifft.
+
+
+## Daten und Methodik
+Grundlage dieses Essays sind Daten des Sozialmonitoring-Bericht [@Sozialmonitoring_Bericht_2018]. Für 941 kleinteilige Statistische Gebiete wurden dafür Angaben zur sozialräumlichen Entwicklung zusammengetragen. Darin enthalten sind beispielsweise Daten zur Arbeitslosigkeit, zu Schulabschlüssen und zur Mindestsicherung unter Kindern und Rentnern. Die Koordinaten der Haltestellen der U3 sowie deren Linienverlauf wurden aus GTFS Daten des Hamburger Verkehrsverbund abgeleitet. Schließlich wurden ebenso die Ergebnisse der Zweitstimmen der Bundestagswahl 2017 pro Wahlbezirk berücksichtigt. Alle diese Daten sind öffentlich verfügbar und für nicht-kommerzielle Zwecke nutzbar.
+
+Die folgende Abbildung zeigt eine Karte der Statistischen Gebiete die einen Radius von 300m um eine Haltestelle der U3 schneiden. Damit werden nur jene Quartiere berücksichtigt werden, deren Bewohner die einzelnen Haltestellen morgens am ehesten aufsuchen und abends am ehestens verlassen.
+
+```{r fig.align="center", fig.height=4, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+# Load data
+communities <- readRDS(here("01_data", "2_processed", "communities.RDS"))
+stations <- readRDS(here("01_data", "2_processed", "stations.RDS"))
+gtfs_shapes_u3_lines <- readRDS(here("01_data", "2_processed", "gtfs_shapes_u3_lines.RDS"))
+
+# Map indicating all Statistische Gebiete and highlight the relevant ones ----
+tmap_mode("view")
+
+tm_shape(filter(communities, !is.na(station_name))) +
+    tm_fill(col = "darkgrey",
+            alpha = 0.5,
+            id = "stadtteil_name", # id is shown as hover text
+            popup.vars = c("bevölk_12_2017", "arbeitslose")) + 
+   tm_borders() +
+  
+  # + Geomtry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+Für die Gebiete um eine Haltestelle wurden anschließend die Mittelwerte ausgewählter sozial-ökonomischer Indikatoren berechnet. Einzige Ausnahme bilden die Haltestellen Mönckebergstraße und Rathaus. Da in deren Umgebung weniger als 400 Personen wohnen, wurden die sozial-ökonomischen Indikatoren für diese Gebiete nicht berücksichtigt. Ebenso wurde ein Statistisches Gebiete südlich der Elbe nicht berücksichtigt, welches streng genommen einen Radius von 300m um die Station Landungsbrücken schneiden würde.
+
+
+```{r include=FALSE}
+# Load data
+areas_around_stations <-  readRDS(here("01_data", "2_processed", "areas_around_stations.RDS"))
+```
+
+
+## Arbeitslosigkeit und Altersarmut
+
+Entlang der U3 gibt es starke Schwankungen in der Arbeitslosigkeit wie die folgende Abbildung zeigt. Während sie zwischen Barmek und Berliner Tor nur gering zwischen 4,1% und 4,7% schwankt, können wir sehr hohe Werte von mehr als 7% in den Gebieten um den Hauptbahnhof, St. Pauli und der Feldstraße beobachten. Im weiteren Verlauf sinkt sie allerdings rapide und fällt auf Werte von unter 2% beim Eppendorfer Baum.
+
+```{r}
+# Line charts
+blue_color_palette <- c("dark_blue" = "#173F5F")
+
+station_plot <- function(df, y_var, y_lab, y_min, y_max) {
+  y_var_en = enquo(y_var)
+  
+  plot <- ggplot(data = filter(df, !is.na(station_name)),
+                 aes_string(x = paste0("reorder(","station_name", ", stop_number)"))) +
+    geom_point(aes(y = !!y_var_en,
+                   colour = "dark_blue",
+                   text = paste0(station_name, ": ", !!y_var_en*100, "%"))) +
+    geom_line(aes(y = !!y_var_en,
+                  group = 1,
+                  colour = "dark_blue",
+                  text = paste0(station_name, ": ", !!y_var_en*100, "%"))) +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(y_min, y_max),
+                       labels = scales::percent_format(accuracy = 1)) +
+    scale_colour_manual(name="",
+                        values = blue_color_palette) +
+    labs(x = "",
+         y = y_lab) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 90, hjust = 1),
+          axis.line.x = element_line(colour = "darkgrey", size = 0.5, linetype = "solid"),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.y = element_line(colour = "lightgrey", size = 0.3, linetype = "dotted"),
+          panel.grid.major.x = element_blank(),
+          legend.position = "none"
+    )
+  return(plot)
+}
+
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_arbeitslose,
+                      y_lab = "Arbeitslosigkeit",
+                      y_min = 0.0,
+                      y_max = 0.105),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+
+```
+
+
+Ähnliches können wir in Hinblick auf die Altersarmut beobachten. Die nächste Abbildung zeigt den Anteil der Empfänger*Innen von Mindestsicherung im Alter. Auch hier sehen wir ein ähnliches Muster und stellen fest, dass besonders im Bereich der Hauptbahnhofs, St. Pauli und der Feldstraße mehr als jede fünfte Person über 65 Jahren Mindestsicherung erhält und vom Risiko der Altersarmut betroffen ist.
+
+
+```{r}
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_alte_mindestsicherung,
+                      y_lab = "Personen mit Mindestsicherung im Alter",
+                      y_min = 0.0,
+                      y_max = 0.32),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+  #highlight("plotly_selected")
+```
+
+
+## Chancengleichheit unter Kindern und Jugendlichen
+Um später nicht in Arbeitslosigkeit oder Armut zu geraten, kann Bildung ein entscheidender Faktor sein. Doch wie sieht es aus mit der Chancengleichheit unter Kindern und Jugendlichen? Wie sind die Chancen verteilt, dass Schulabgänger studieren können? Ein Blick auf den Anteil der Schüler die /kein/ Abitur haben, verrät uns mehr darüber.
+
+Die folgende Abbildung zeigt, dass östlich der Alster 29% bis 54% der Schulabgänger kein Abitur haben. Analog zur Arbeitslosigkeit und Altersarmut hat die Mehrheit der Schüler im Bereich zwischen den Landungsbrücken und der Feldstraße ebenso kein Abitur und kann damit nicht direkt an einer Universität studieren. Nach der Feldstraße hingegen ist die Chance Abiturienten in der U3 zu treffen signifikant höher. Besonders beim Eppendorfer Baum und der Kellinghusenstraßen verlässt nur knapp 10~Prozent der Schüler die Schule /ohne/ Abitur.
+
+```{r}
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_schulabschluss_kein_abitur,
+                      y_lab = "Schulabgänger ohne Abitur",
+                      y_min = 0.0,
+                      y_max = 0.62),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout() 
+```
+
+
+## Parteipräferenzen
+Und schließlich können uns die Wahlergebnisse der letzten Bundestagswahl in 2017 einen Eindruck geben, welche Themen und Standpunkte den Personen entlang der U3 wichtig sind. Die folgende Abbildung zeigt dazu den Anteil der Zeitstimmen für die beiden größten Parteien SPD und CDU.
+
+Auch hier ist erkennbar, dass sich das Wahlverhalten von Halstestelle zu Haltestelle ändern kann. Obwohl der Abstand beider Parteien zueinander häufig nur gering ist, können wir einen besonders großen Vorsprung der CUD vor der SPD zwischen dem Eppendorfer Baum und der Sierichstraße beobachten.
+
+```{r}
+party_colors <- c("SPD" = "red",
+                  "CDU" = "black")
+
+party_plot <- ggplot(data = filter(areas_around_stations, !is.na(station_name)),
+       aes_string(x = paste0("reorder(","station_name", ", stop_number)"))) +
+  # Data of SPD
+  geom_line(aes(y = share_SPD, group = 1, colour = "SPD", text = paste("SPD: ", share_SPD))) +
+  geom_point(aes(y = share_SPD, group = 1, colour = "SPD")) +
+  # Data of CDU
+  geom_line(aes(y = share_CDU, group = 1, colour = "CDU", text = paste("CDU: ", share_CDU))) +
+  geom_point(aes(y = share_CDU, group = 1, colour = "CDU")) +
+  # Aesthetics...
+  scale_y_continuous(expand = c(0,0),
+                     limits = c(0.0, 0.42),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_colour_manual(name="",
+                      values = party_colors) +
+  labs(x = "",
+       y = "Anteil Zweitstimmen") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.line.x = element_line(colour = "darkgrey", size = 0.5, linetype = "solid"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(colour = "lightgrey", size = 0.3, linetype = "dotted"),
+        panel.grid.major.x = element_blank(),
+        legend.position = "top"
+        )
+
+ggplotly(party_plot,
+         tooltip = c("text")) %>%
+  config(displayModeBar = FALSE) %>% 
+  layout(hovermode = 'compare')
+  
+```
+
+## Zusammenfassung
+Dieser Essay zeigt, dass Arm und Reich in Hamburg nicht weit voneinander entfernt sein müssen. Fährt man beispielsweise mit der U3 kommt man durch Gebiete in denen Arm und Reich häufig nur ein paar Haltestellen entfernt liegen.
+
+Ganz besonders fällt dies auf wenn man zwischen den Landungsbrücken und der Kellinghusenstraße unterwegs ist.  Während im Gebiet an der Elbe eine hohe Arbeitslosigkeit und Altersarmut herrscht, sind diese nord-westlich der Alster fast kaum vorhanden. Ebenso machen dort deutlich mehr Schülerinnen und Schüler Abitur und haben bessere Chancen auf einen Studienplatz.
+
+<br><br>
+
+
+`r '# Literatur {-}'`
+
