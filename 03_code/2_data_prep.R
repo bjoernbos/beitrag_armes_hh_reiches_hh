@@ -289,6 +289,15 @@ areas_around_stations$avg_schulabschluss_kein_abitur[areas_around_stations$stati
 areas_around_stations$share_SPD[areas_around_stations$station_name == "Mönckebergstraße"] <- NA
 areas_around_stations$share_CDU[areas_around_stations$station_name == "Mönckebergstraße"] <- NA
 
+areas_around_stations$sum_bevöl[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_kinder_migration[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_kinder_alleinerziehende[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_sgb2_empfänger[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_arbeitslose[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_kinder_mindestsicherung[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_alte_mindestsicherung[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_kinder_mindestsicherung[areas_around_stations$station_name == "Rathaus"] <- NA
+areas_around_stations$avg_schulabschluss_kein_abitur[areas_around_stations$station_name == "Rathaus"] <- NA
 
 # Round statistics to 3 digits -------------------------------------------------
 areas_around_stations %<>% 
@@ -299,11 +308,11 @@ areas_around_stations %<>%
 saveRDS(areas_around_stations,
         here("01_data", "2_processed", "areas_around_stations.RDS"))
 
-write_csv(areas_around_stations,
-          here("02_results", "results_per_station.csv"))
+areas_around_stations %>% 
+  select(-geometry) %>% 
+  filter(!is.na(station_name)) %>% 
+  write_csv(here("02_results", "results_per_station.csv"))
 
-# stargazer::stargazer(areas_around_stations,
-#                      type = "latex",
-#                      out = here("02_results", "results_per_station.tex"),
-#                      digits = 2,
-#                      summary = FALSE)
+
+# Export Session Info to ensure reproducability --------------------------------
+writeLines(capture.output(sessionInfo()), "sessionInfo.txt")
