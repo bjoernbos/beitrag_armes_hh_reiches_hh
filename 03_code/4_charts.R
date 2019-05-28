@@ -2,7 +2,7 @@
 
 library(here)
 library(tidyverse)
-library(tikzDevice) # to produce LaTeX-compatible charts
+
 
 # Load data
 areas_around_stations <-  readRDS(here("01_data", "2_processed", "areas_around_stations.RDS"))
@@ -38,7 +38,7 @@ station_plot(areas_around_stations,
              y_var = "avg_arbeitslose",
              y_lab = "Arbeitslosigkeit",
              y_min = 0.0,
-             y_max = 0.1)
+             y_max = 0.105)
 
 ggsave(filename = "fig_unemployment.pdf",
        path = here("02_results"),
@@ -52,7 +52,7 @@ station_plot(areas_around_stations,
              y_var = "avg_alte_mindestsicherung",
              y_lab = "Personen mit Mindestsicherung im Alter",
              y_min = 0.0,
-             y_max = 0.4)
+             y_max = 0.32)
 
 ggsave(filename = "fig_mindestsicherung_alter.pdf",
        path = here("02_results"),
@@ -66,7 +66,7 @@ station_plot(areas_around_stations,
              y_var = "avg_schulabschluss_kein_abitur",
              y_lab = "Schulabgänger ohne Abitur",
              y_min = 0.0,
-             y_max = 0.65)
+             y_max = 0.62)
 
 ggsave(filename = "fig_schulabgaenger_ohne_abitur.pdf",
        path = here("02_results"),
@@ -91,7 +91,7 @@ ggplot(data = filter(areas_around_stations, !is.na(station_name)),
   geom_point(aes(y = share_CDU, group = 1, colour = "CDU")) +
   # Aesthetics...
   scale_y_continuous(expand = c(0,0),
-                     limits = c(0.0, 0.4),
+                     limits = c(0.0, 0.42),
                      labels = scales::percent_format(accuracy = 1)) +
   scale_colour_manual(name="",
                       values = party_colors) +
@@ -104,7 +104,7 @@ ggplot(data = filter(areas_around_stations, !is.na(station_name)),
         panel.grid.minor = element_blank(),
         panel.grid.major.y = element_line(colour = "lightgrey", size = 0.3, linetype = "dotted"),
         panel.grid.major.x = element_blank(),
-        legend.position = "bottom"
+        legend.position = "top"
         )
 
 ggsave(filename = "fig_ergebnis_bundestagswahl_2017.pdf",
