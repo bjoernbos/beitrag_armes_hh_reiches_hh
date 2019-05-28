@@ -21,7 +21,7 @@ Die grundlegenden Daten stammen aus folgenden frei verfügbaren Quellen:
 
 * Die [Ergebnisse der letzten Bundestagswahl 2017](https://www.bundeswahlleiter.de/bundestagswahlen/2017/ergebnisse/weitere-ergebnisse.html) sind pro Wahlkreis vom Bundeswahlleiter abgerufen worden.
 
-* Und schließlich stammen die Koordinaten der Haltestellen der Linie U3, sowie deren Linienverlauf aus [GTFS Daten des Hamburg Verkehrsverbund](suche.transparenz.hamburg.de/dataset/hvv-fahrplandaten-gtfs-mai-2019-bis-dezember-2019).
+* Und schließlich stammen die Koordinaten der Haltestellen der Linie U3, sowie deren Linienverlauf aus [GTFS Daten des Hamburg Verkehrsverbund](http://suche.transparenz.hamburg.de/dataset/hvv-fahrplandaten-gtfs-mai-2019-bis-dezember-2019).
 
 ## Reproduktion
 Um die Analyse nachzuvollziehen und den Essay zu reproduzieren ist der gesamte Code in diesem Repository verfügbar. Er wurden unter `R 3.5.1` geschrieben und benötigt u.a. die Packages `tidyverse`, `sf` sowie `tmap`. Die jeweiligen Versionsnummer für diese Packages sowie Details zu weiteren Packages sind in der Datei `sessionInfo.txt` enthalten.
