@@ -65,30 +65,6 @@ if (!file.exists(here("01_data", "1_raw", "wahlbezirke_hh_2017"))) {
 }
 
 
-# Subway stations of the line U3 -----------------------------------------------
-if (!file.exists(here("01_data", "1_raw", "subway_stations.RDS"))) {
-
-  query <- '
-  SELECT ?stationLabel ?coordinates
-  WHERE 
-  {
-    ?station wdt:P81 wd:Q781351.
-    #station #is part of #the line U3
-  
-    # Get coordinates of each station
-    ?station wdt:P625 ?coordinates.
-  
-    SERVICE wikibase:label { bd:serviceParam wikibase:language
-    "[AUTO_LANGUAGE],en". }
-  }
-  '
-  
-  stations <- WikidataQueryServiceR::query_wikidata(query)
-
-  saveRDS(stations, here("01_data", "1_raw", "subway_stations.RDS"))
-}
-
-
 # Order of subway stations -----------------------------------------------------
 if (!file.exists(here("01_data", "2_processed", "stations_order.RDS"))) {
 
