@@ -23,12 +23,49 @@ Die grundlegenden Daten stammen aus folgenden frei verfügbaren Quellen:
 
 * Und schließlich stammen die Koordinaten der Haltestellen der Linie U3, sowie deren Linienverlauf aus [GTFS Daten des Hamburg Verkehrsverbund](http://suche.transparenz.hamburg.de/dataset/hvv-fahrplandaten-gtfs-mai-2019-bis-dezember-2019).
 
-## Reproduktion
+## Reproduzierbarkeit
 Um die Analyse nachzuvollziehen und den Essay zu reproduzieren ist der gesamte Code in diesem Repository verfügbar. Er wurden unter `R 3.5.1` geschrieben und benötigt u.a. die Packages `tidyverse`, `sf` sowie `tmap`. Die jeweiligen Versionsnummer für diese Packages sowie Details zu weiteren Packages sind in der Datei `sessionInfo.txt` enthalten.
 
 Im Ordner `03_code` ist der Code zum Herunterladen der Daten, zur Datenaufbereitung, sowie zur Erstellung der Karten und Grafiken enthalten.
 
 Bei entsprechendem Betriebssystem und Konfiguration kann der Code und die interaktive Website auch über das Bash-Skript `build.sh` reproduziert werden.
+
+**Alternativ** kann der Beitrag auch über einen Dockercontainer reproduziert werden.
+
+Dazu wird dieses Repository am besten über die Kommandozeile heruntergeladen. Anschließend kann ein Docker Image erstellt werden und R über den Docker Container gestartet werden:
+
+```
+# Herunterladen des Repo
+git clone https://github.com/bjoernbos/beitrag_armes_hh_reiches_hh
+
+# Erstellen des Docker Image
+docker build -t rstudio_beitrag beitrag_armes_hh_reiches_hh/
+
+# Starten des Docker Containers
+# TODO: ändere <user_name> und <password>
+docker run --rm -e USER=<user_name> \
+  -e PASSWORD=<password> \
+  -p 8787:8787 \
+  rstudio_beitrag
+```
+Anschließend kann RStudio im Browser unter `localhost:8787`aufgerufen werden (der Benutzername und das Passwort wurden im letzten Befehl angegeben). Schließlich kann darüber die Analyse reproduziert werden.
+
+Falls der Container auf einem Server gestartet werden soll, sollte ein Docker Volume als Speicherplatz angelegt werden. Andernfalls kann es zu Konflikten mit Schreibrechten kommen. Nach dem Erstellen des Docker Containers ist dafür folgendes notwendig:
+
+```
+# Erstellen eines Docker Volume
+docker volume create shared_docker_volume
+
+# Starten des Docker Container und einbinden des Volume
+# TODO: ändere <user_name> und <password>
+docker run --rm -e USER=<user_name> \
+  -e PASSWORD=<password> \
+  -p 8787:8787 \
+  --mount source=shared_docker_volume,target=/home/rstudio/shared_docker_volume
+  rstudio_beitrag
+```
+
+Beachte, dass in diesem Fall die Dateipfade angepasst werden müssen, da RStudio heruntergeladene Datein nur im Ordner `shared_docker_volume` speichern kann.
 
 ## Author
 Björn Bos – [Mail](mailto:bjoern.bos@web.de)
