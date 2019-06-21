@@ -68,7 +68,7 @@ if (!file.exists(here("01_data", "1_raw", "wahlbezirke_hh_2017"))) {
 # Order of subway stations -----------------------------------------------------
 if (!file.exists(here("01_data", "2_processed", "stations_order.RDS"))) {
 
-  stations_order <- tibble(
+  stations_order <- tibble::tibble(
     stop_number  = 1:25,
     station_name = c("Wandsbek-Gartenstadt", "Habichtstraße", "Barmbek", "Dehnhaide",
                      "Hamburger Straße", "Mundsburg", "Uhlandstraße", "Lübecker Straße",
