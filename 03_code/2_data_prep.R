@@ -314,5 +314,22 @@ areas_around_stations %>%
   write_csv(here("02_results", "results_per_station.csv"))
 
 
+# Prepare data from Straßenbaumkataster ----------------------------------------
+trees <- read_sf(here::here("01_data", "1_raw", "Straßenbaumkataster_-_Hamburg.geojson")) # 190 MB
+stations <- readRDS(here("01_data", "2_processed", "stations.RDS"))
+
+# Obtain the trees that are within a radius of 500m around a station
+trees <- st_join(trees,
+                 stations,
+                 st_is_within_distance, dist = 500)
+
+trees %<>%
+  dplyr::filter(!is.na(station_name))
+
+# Export those trees
+saveRDS(trees,
+        here("01_data", "2_processed", "trees.RDS"))
+
+
 # Export Session Info to ensure reproducability --------------------------------
 writeLines(capture.output(sessionInfo()), "sessionInfo.txt")

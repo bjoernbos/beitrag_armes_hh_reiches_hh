@@ -2,12 +2,18 @@
 title: 'Nächster Halt: Armutsviertel? Eine Bahnfahrt mit der U3 durch Hamburg'
 author: "Björn Bos"
 # date: "Mai 2019"
+lang: de
 output:
   html_document:
     fig_caption: yes
     theme: paper
     includes: 
       before_body: header.html
+format:
+  html:
+    theme: Materia
+    include-before-body: header.html
+    embed-resources: true
 bibliography: ../literature.bib
 biblio-style: "apalike"
 link-citations: true
@@ -41,6 +47,8 @@ library(plotly)
 
 > Dies ist ein Beitrag zum Studierendenwettbewerb "Armes Hamburg - Reiches Hamburg", welcher im Sommer 2019 an der Universität Hamburg ausgeschrieben wurde.
 
+> Eine Präsentation dazu vom April 2023 ist [hier](https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/slides.html)
+
 ## Motivation
 In Hamburg findet man in vielen Straßen prunkvolle Fassaden und Villen reihen sich an Alster und Elbe nebeneinander. Doch ist Hamburg damit reich? Und partizipieren alle Hamburger im gleichen Maß vom allgemein angenommen Wohlstand?
 
@@ -58,7 +66,9 @@ Grundlage dieses Essays sind Daten des Sozialmonitoring-Bericht [@Sozialmonitori
 
 Die folgende Abbildung zeigt eine Karte der Statistischen Gebiete die einen Radius von 300m um eine Haltestelle der U3 schneiden. Damit werden nur jene Quartiere berücksichtigt werden, deren Bewohner die einzelnen Haltestellen morgens am ehesten aufsuchen und abends am ehestens verlassen.
 
-```{r fig.align="center", fig.height=4, fig.width=9, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r fig.align="center", message=FALSE, warning=FALSE}
+#| column: page
+
 # Load data
 communities <- readRDS(here("01_data", "2_processed", "communities.RDS"))
 stations <- readRDS(here("01_data", "2_processed", "stations.RDS"))
@@ -174,9 +184,9 @@ ggplotly(station_plot(areas_around_stations,
 
 
 ## Chancengleichheit unter Kindern und Jugendlichen
-Um später nicht in Arbeitslosigkeit oder Armut zu geraten, kann Bildung ein entscheidender Faktor sein. Doch wie sieht es aus mit der Chancengleichheit unter Kindern und Jugendlichen? Wie sind die Chancen verteilt, dass Schulabgänger studieren können? Ein Blick auf den Anteil der Schüler die /kein/ Abitur haben, verrät uns mehr darüber.
+Um später nicht in Arbeitslosigkeit oder Armut zu geraten, kann Bildung ein entscheidender Faktor sein. Doch wie sieht es aus mit der Chancengleichheit unter Kindern und Jugendlichen? Wie sind die Chancen verteilt, dass Schulabgänger studieren können? Ein Blick auf den Anteil der Schüler die _kein_ Abitur haben, verrät uns mehr darüber.
 
-Die folgende Abbildung zeigt, dass östlich der Alster 29% bis 54% der Schulabgänger kein Abitur haben. Analog zur Arbeitslosigkeit und Altersarmut hat die Mehrheit der Schüler im Bereich zwischen den Landungsbrücken und der Feldstraße ebenso kein Abitur und kann damit nicht direkt an einer Universität studieren. Nach der Feldstraße hingegen ist die Chance Abiturienten in der U3 zu treffen signifikant höher. Besonders beim Eppendorfer Baum und der Kellinghusenstraßen verlässt nur knapp 10~Prozent der Schüler die Schule /ohne/ Abitur.
+Die folgende Abbildung zeigt, dass östlich der Alster 29% bis 54% der Schulabgänger kein Abitur haben. Analog zur Arbeitslosigkeit und Altersarmut hat die Mehrheit der Schüler im Bereich zwischen den Landungsbrücken und der Feldstraße ebenso kein Abitur und kann damit nicht direkt an einer Universität studieren. Nach der Feldstraße hingegen ist die Chance Abiturienten in der U3 zu treffen signifikant höher. Besonders beim Eppendorfer Baum und der Kellinghusenstraßen verlässt nur knapp 10~Prozent der Schüler die Schule _ohne_ Abitur.
 
 ```{r}
 ggplotly(station_plot(areas_around_stations,
@@ -193,7 +203,7 @@ ggplotly(station_plot(areas_around_stations,
 ## Parteipräferenzen
 Und schließlich können uns die Wahlergebnisse der letzten Bundestagswahl in 2017 einen Eindruck geben, welche Themen und Standpunkte den Personen entlang der U3 wichtig sind. Die folgende Abbildung zeigt dazu den Anteil der Zeitstimmen für die beiden größten Parteien SPD und CDU.
 
-Auch hier ist erkennbar, dass sich das Wahlverhalten von Halstestelle zu Haltestelle ändern kann. Obwohl der Abstand beider Parteien zueinander häufig nur gering ist, können wir einen besonders großen Vorsprung der CUD vor der SPD zwischen dem Eppendorfer Baum und der Sierichstraße beobachten.
+Auch hier ist erkennbar, dass sich das Wahlverhalten von Halstestelle zu Haltestelle ändern kann. Obwohl der Abstand beider Parteien zueinander häufig nur gering ist, können wir einen besonders großen Vorsprung der CDU vor der SPD zwischen dem Eppendorfer Baum und der Sierichstraße beobachten.
 
 ```{r}
 party_colors <- c("SPD" = "red",

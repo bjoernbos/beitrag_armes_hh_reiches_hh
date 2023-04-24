@@ -10,6 +10,8 @@ _archiv/
 !02_results/.gitkeep
 !05_misc/.gitkeep
 
+.DS_Store
+
 ################################################################################
 # R-Files
 # Source: https://github.com/github/gitignore
@@ -321,3 +323,5 @@ TSWLatexianTemp*
 
 # standalone packages
 *.sta
+
+/.quarto/
