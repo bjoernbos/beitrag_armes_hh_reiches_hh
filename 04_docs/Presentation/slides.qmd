@@ -1,0 +1,846 @@
+---
+# title: "Nächster Halt Armutsviertel? Eine Bahnfahrt mit der U3 durch Hamburg"
+# author: "Björn Bos"
+# date: "25. April 2023"
+lang: de
+format:
+  revealjs:
+    slide-number: true
+    embed-resources: true
+---
+
+# {background-image="Fig_header_image.jpg"}
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(here)
+library(magrittr)
+library(sf)
+library(tmap)
+library(kableExtra)
+library(ggplot2)
+library(plotly)
+library(raster)
+library(countdown)
+```
+
+<h1><span style="background-color:white;">Nächster Halt Armutsviertel?<span></h1>
+<br>
+<h2><span style="background-color:white;">Eine Bahnfahrt mit der U3 durch Hamburg<span></h2>
+
+<br>
+<h4 style="color:white;">Björn Bos, Universität Hamburg <br> 25. April 2023</h4>
+
+
+
+## Agenda
+
+::: incremental
+- 🚈 Bahnfart mit der U3 (90min)
+- ☕ Pause  (15min)
+- 🌳 Umweltgerechtigkeit entlang der U3 (60min)
+:::
+
+. . .
+
+<br>
+
+Formate:
+
+- 👨 Vorträge
+- `r fontawesome::fa("users", "#447099")` Gruppenarbeit und Diskussionen
+
+
+## Einführung {.smaller}
+
+::: incremental
+- Mai 2019: **Studierendenwettbewerb "Armes Hamburg - Reiches Hamburg"**
+- Partizipieren alle Hamburger im gleichen Maß vom Wohlstand?
+- Unsichtbare Trennwände? (Elbe, Alster)
+- 💡 Lokale Ungleichheiten darstellen
+- 🚈 U-Bahn = Schaufenster und Begegnungsort
+- Vorherigen Analysen für [New York](https://projects.newyorker.com/story/subway/) und [Berlin](https://interaktiv.morgenpost.de/m29/)
+:::
+
+
+# `r fontawesome::fa("users", "white")` Gruppenarbeit {background-color="#447099" transition="slide-in"}
+
+::: incremental
+- Wo wohnt ihr?
+- Setzt einen Punkt auf die Haltestelle an der ihr am nächsten wohnt
+- Wohin fahrt ihr am häufigsten?
+- Welchen Menschen begegnet ihr auf der Fahrt?
+:::
+
+
+## 🚈 U3 Karte
+
+```{r}
+# Load data
+communities <- readRDS(here("01_data", "2_processed", "communities.RDS"))
+stations <- readRDS(here("01_data", "2_processed", "stations.RDS"))
+gtfs_shapes_u3_lines <- readRDS(here("01_data", "2_processed", "gtfs_shapes_u3_lines.RDS"))
+areas_around_stations <-  readRDS(here("01_data", "2_processed", "areas_around_stations.RDS"))
+
+# Map indicating all Statistische Gebiete and highlight the relevant ones ----
+tmap_mode("view")
+
+  # Geometry of Sozialmonitoring Areas
+# tm_shape(filter(communities, !is.na(station_name))) +
+#     tm_fill(col = "darkgrey",
+#             alpha = 0.5,
+#             id = "stadtteil_name", # id is shown as hover text
+#             popup.vars = c("bevölk_12_2017", "arbeitslose")) + 
+#    tm_borders() +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+::: aside
+Ringlinie, 25 Haltestellen, 20km Strecke, 45min Fahrtzeit
+:::
+
+
+## 🚈 U3 Haltestellen {.smaller}
+
+::: {layout-ncol=3}
+## 
+```{r}
+# Station 1-10
+stations %>%
+  st_drop_geometry() %>%
+  dplyr::select(stop_number, station_name) %>%
+  arrange(stop_number) %>%
+  filter(stop_number <= 10) %>% 
+  rename(Nr = stop_number,
+         Station = station_name) %>% 
+  kbl()
+```
+
+##
+```{r}
+# Station 10-18
+stations %>%
+  st_drop_geometry() %>%
+  dplyr::select(stop_number, station_name) %>%
+  arrange(stop_number) %>%
+  filter(stop_number >= 11 & stop_number <= 18) %>% 
+  rename(Nr = stop_number,
+         Station = station_name) %>% 
+  kbl()
+```
+
+
+##
+```{r}
+# Station 19-25
+stations %>%
+  st_drop_geometry() %>%
+  dplyr::select(stop_number, station_name) %>%
+  arrange(stop_number) %>%
+  filter(stop_number >= 19) %>% 
+  rename(Nr = stop_number,
+         Station = station_name) %>% 
+  kbl()
+```
+
+:::
+
+
+
+# `r fontawesome::fa("users", "white")` Gruppenarbeit {background-color="#447099" transition="slide-in"}
+
+::: incremental
+- Teilt euch in 4 Gruppen
+- Wählt 7 Haltestellen und ordnet diese nach...
+  - Anteil der Arbeitslosen
+  - Anteil der Schulabhänger mit Abitur
+  - Anteil der Kinder mit Migrationshintergrund
+  - Anteil der Altersarmut (unter Mindestsicherung)
+:::
+
+```{r}
+#| echo: false
+countdown_timer <- function(minutes = 1, font_size = "1em") {
+  countdown(
+    minutes = minutes,
+    warn_when = 60,
+    color_text = "black",
+    color_background = "lightgray",
+    color_border = "lightgray",
+    color_finished_background = "lightgray",
+    color_finished_border = "lightgray",
+  )
+}
+```
+
+<br>
+<br>
+
+```{R}
+#| echo: false
+countdown_timer(15)
+```
+
+
+## 🚈 Arbeitslosigkeit {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+```{r}
+# Create variable with 2-digits
+communities %<>%
+  mutate(arbeitslose_2d = round(arbeitslose * 100, 2))
+
+  # Geometry of Sozialmonitoring Areas
+tm_shape(filter(communities, !is.na(station_name))) +
+    tm_fill(col = "arbeitslose_2d",
+            alpha = 0.5,
+            title = "Arbeitslose (%)",
+            id = "arbeitslose_2d", # id is shown as hover text
+            popup.vars = c("stadtteil_name", "arbeitslose_2d")) +
+   #tm_borders() +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+### Verlauf
+```{r}
+# Define a station plot
+station_plot <- function(df, y_var, y_lab, y_min, y_max) {
+  y_var_en = enquo(y_var)
+  
+  plot <- ggplot(data = filter(df, !is.na(station_name)),
+                 aes_string(x = paste0("reorder(","station_name", ", stop_number)"))) +
+    geom_point(aes(y = !!y_var_en,
+                   text = paste0(station_name, ": ", !!y_var_en*100, "%")),
+               colour = "#173F5F") +
+    geom_line(aes(y = !!y_var_en,
+                  group = 1,
+                  text = paste0(station_name, ": ", !!y_var_en*100, "%")),
+              colour = "#173F5F") +
+    scale_y_continuous(expand = c(0,0),
+                       limits = c(y_min, y_max),
+                       labels = scales::percent_format(accuracy = 1)) +
+    labs(x = "",
+         y = y_lab) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 90, hjust = 1),
+          axis.line.x = element_line(colour = "darkgrey", size = 0.5, linetype = "solid"),
+          panel.grid.minor = element_blank(),
+          panel.grid.major.y = element_line(colour = "lightgrey", size = 0.3, linetype = "dotted"),
+          panel.grid.major.x = element_blank(),
+          legend.position = "none"
+    )
+  return(plot)
+}
+
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_arbeitslose,
+                      y_lab = "Arbeitslosigkeit",
+                      y_min = 0.0,
+                      y_max = 0.105),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+areas_around_stations %>% 
+  filter(!is.na(station_name)) %>% 
+  dplyr::select(station_name, avg_arbeitslose) %>%
+  mutate(avg_arbeitslose = avg_arbeitslose * 100) %>% 
+  arrange(desc(avg_arbeitslose)) %>% 
+  rename(Station = station_name,
+         `Arbeitslose (%)` = avg_arbeitslose) %>% 
+  kbl()
+```
+
+:::
+
+
+## 🚈 Schulabhänger mit Abitur {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+```{r}
+# Create variable for Abiturienten
+communities %<>%
+  mutate(avg_schulabschluss_abitur = round((1 - schulabschlüsse) * 100), 2)
+
+  # Geometry of Sozialmonitoring Areas
+tm_shape(filter(communities, !is.na(avg_schulabschluss_abitur))) +
+    tm_fill(col = "avg_schulabschluss_abitur",
+            palette = "Blues",
+            title = "Abiturienten (%)",
+            alpha = 0.5,
+            id = "avg_schulabschluss_abitur", # id is shown as hover text
+            popup.vars = c("stadtteil_name", "avg_schulabschluss_abitur")) +
+   #tm_borders() +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+### Verlauf
+```{r}
+# Create variable for Abiturienten
+areas_around_stations %<>% 
+  mutate(avg_schulabschluss_abitur = 1 - avg_schulabschluss_kein_abitur)
+
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_schulabschluss_abitur,
+                      y_lab = "Abiturienten",
+                      y_min = 0,
+                      y_max = 1),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+areas_around_stations %>% 
+  filter(!is.na(station_name)) %>% 
+  dplyr::select(station_name, avg_schulabschluss_abitur) %>%
+  mutate(avg_schulabschluss_abitur = avg_schulabschluss_abitur * 100) %>% 
+  arrange(desc(avg_schulabschluss_abitur)) %>% 
+  rename(Station = station_name,
+         `Abiturienten (%)` = avg_schulabschluss_abitur) %>% 
+  kbl()
+```
+
+:::
+
+
+## 🚈 Kinder mit Migrationshintergrund {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+```{r}
+# Create variable with 2-digits
+communities %<>%
+  mutate(kinder_migration_2d = round(kinder_migration * 100, 2))
+
+  # Geometry of Sozialmonitoring Areas
+tm_shape(filter(communities, !is.na(kinder_migration_2d))) +
+    tm_fill(col = "kinder_migration_2d",
+            title = "Kinder mit Migrationshintergrund (%)",
+            alpha = 0.5,
+            id = "kinder_migration_2d", # id is shown as hover text
+            popup.vars = c("stadtteil_name", "kinder_migration_2d")) +
+   #tm_borders() +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+### Verlauf
+```{r}
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_kinder_migration,
+                      y_lab = "Kinder mit Migrationshintergrund",
+                      y_min = 0,
+                      y_max = 1),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+areas_around_stations %>% 
+  filter(!is.na(station_name)) %>% 
+  dplyr::select(station_name, avg_kinder_migration) %>%
+  mutate(avg_kinder_migration = avg_kinder_migration * 100) %>% 
+  arrange(desc(avg_kinder_migration)) %>% 
+  rename(Station = station_name,
+         `Kinder mit Migrationshintergrund (%)` = avg_kinder_migration) %>% 
+  kbl()
+```
+
+:::
+
+
+## 🚈 Altersarmut {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+```{r}
+# Create variable with 2-digits
+communities %<>%
+  mutate(alte_mindestsicherung_2d = round(alte_mindestsicherung * 100, 2))
+
+  # Geometry of Sozialmonitoring Areas
+tm_shape(filter(communities, !is.na(alte_mindestsicherung_2d))) +
+    tm_fill(col = "alte_mindestsicherung_2d",
+            title = "Mindestsicherung im Alter (%)",
+            alpha = 0.5,
+            id = "alte_mindestsicherung_2d", # id is shown as hover text
+            popup.vars = c("stadtteil_name", "alte_mindestsicherung_2d")) +
+   #tm_borders() +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+### Verlauf
+```{r}
+ggplotly(station_plot(areas_around_stations,
+                      y_var = avg_alte_mindestsicherung,
+                      y_lab = "Ältere Menschen mit Mindestsicherung",
+                      y_min = 0,
+                      y_max = 0.26),
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+areas_around_stations %>% 
+  filter(!is.na(station_name)) %>% 
+  dplyr::select(station_name, avg_alte_mindestsicherung) %>%
+  mutate(avg_alte_mindestsicherung = avg_alte_mindestsicherung * 100) %>% 
+  arrange(desc(avg_alte_mindestsicherung)) %>% 
+  rename(Station = station_name,
+         `Ältere Menschen mit Mindestsicherung (%)` = avg_alte_mindestsicherung) %>% 
+  kbl() %>% 
+  kable_styling("hover", "stripped")
+```
+
+:::
+
+
+# `r fontawesome::fa("users", "white")` Diskussion {background-color="#447099" transition="slide-in"}
+
+::: incremental
+- Wie empfindet ihr die Beobachtungen?
+- Wie gerecht empfindet ihr die Verteilungen?
+- Woher kann die räumliche Ungleichheit kommen?
+- Was könnten die Auswirkungen von einer solchen Ungleichheit sein?
+:::
+
+<br>
+<br>
+
+```{R}
+#| echo: false
+countdown_timer(30)
+```
+
+
+# ☕ Pause {background-color="#447099" transition="slide-in"}
+
+<br>
+<br>
+
+```{R}
+#| echo: false
+countdown_timer(15)
+```
+
+
+# {background-image="Fig_anatol-rurac-XbZv1pX0UAQ-unsplash.jpg"}
+
+<h2><span style="background-color:white;">Umweltgerechtigkeit entlang der U3<span></h2>
+
+
+## Einführung {.smaller}
+
+::: incremental
+- Wohlstand $\neq$ Einkommen (→ Gesundheit, Lebenszufriedenheit, etc.)
+- **Wie gut sind Umweltgüter verteilt?** (→ saubere Luft, Grünanlagen, etc.)
+- **Wer trägt die Kosten von Maßnahmen der Umweltpolitik?** (z.B. Kohleausstieg, Emissionshandel, Preisbremsen)
+- Häufig überproportionale Belastung von sozial benachteiligten Haushalten (vgl. [Banzhaf et al. 2019](https://www.aeaweb.org/articles?id=10.1257/jep.33.1.185))
+:::
+
+##
+
+![](Fig_Banzhaf.png){width=30%, fig-align="center"}
+
+
+
+::: footer
+Quelle: [Banzhaf et al. (2019)](https://www.aeaweb.org/articles?id=10.1257/jep.33.1.185)
+:::
+
+## Zielsetzung {.smaller}
+
+> „Umweltgerechtigkeit zielt darauf ab, eine Konzentration gesundheitsrelevanter **Umweltbelastungen** wie Lärm oder Schadstoffe in der Luft **in sozial benachteiligten** Quartieren oder Wohnlagen zu **vermeiden und abzubauen** sowie ihren Bewohnerinnen und Bewohnern den **Zugang zu gesundheitsfördernden Umweltressourcen** – dazu gehören Grün- und Freiflächen – zu **ermöglichen**.“ ([Böhme et al., 2019, p. 12](https://www.umweltbundesamt.de/sites/default/files/medien/1410/publikationen/2019-03-28_uug_02-2019_umweltgerechtigkeit.pdf))
+
+. . .
+
+- **Vermeidung**: Umweltbelastungen in sozial benachteiligten vermeiden und abzubauen
+- **Anpassung**: Zugang zu gesundheitsfördernden Umweltressourcen ermöglichen
+
+
+##
+
+::: {#fig-pm25trend}
+
+![](Fig_PM25_by_Foreign.png){width=80%}
+
+Regionale Feinstaubbelastung nach Migrationsstatus
+:::
+
+
+##
+
+::: {#fig-pm25scatter}
+
+![](Fig_Timeline_PM25_by_groups.png){width=40%}
+
+Trend der Feinstaubbelastung nach Migrationsstatus
+:::
+
+##
+
+::: {#fig-pm25hamburg}
+![](Fig_Locations_Hamburg.png){width=80%}
+
+Industrielle Anlagen in Hamburg
+:::
+
+::: footer
+Quelle: Röder (2021, Bachelorarbeit)
+:::
+
+
+# `r fontawesome::fa("users", "white")` Gruppenarbeit {background-color="#447099" transition="slide-in"}
+
+. . .
+
+- Teilt euch in 2 Gruppen
+- Wählt 7 Haltestellen und ordnet diese nach...
+  - Durchschnittliche Luftqualität
+  - Anzahl der Straßenbäume im Umkreis von 500m
+
+```{r}
+#| echo: false
+library(countdown)
+countdown_timer <- function(minutes = 1, font_size = "1em") {
+  countdown(
+    minutes = minutes,
+    warn_when = 60,
+    color_text = "black",
+    color_background = "lightgray",
+    color_border = "lightgray",
+    color_finished_background = "lightgray",
+    color_finished_border = "lightgray",
+  )
+}
+```
+
+<br>
+<br>
+
+```{R}
+#| echo: false
+countdown_timer(15)
+```
+
+
+## 🌳 Luftqualität {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+```{r}
+# Import data
+aq_data <- raster(here::here("01_data", "1_raw", "V5GL03.HybridPM25.Europe.202101-202112.nc")) # 5 MB
+
+# Filter for area around Hamburg
+aq_hh <- crop(aq_data, extent(9.7, 10.2, 53.4, 53.7))
+
+# Obtain the PM2.5 value at the stations
+stations$pm25 <- raster::extract(aq_hh, stations)
+
+# Geometry of trees
+tm_shape(aq_hh) +
+  tm_raster(alpha = 0.5,
+            title = "PM2.5 in 2021") +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+
+  # + Points of Stations
+  tm_shape(stations) +
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number")
+```
+
+
+### Verlauf
+```{r}
+pm25_station_plot <- station_plot(stations,
+                      y_var = pm25,
+                      y_lab = "Luftqualität (PM2.5)",
+                      y_min = 10,
+                      y_max = 11) +
+  scale_y_continuous(labels = scales::number)
+
+ggplotly(pm25_station_plot,
+         tooltip = "y") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+stations %>%
+  st_drop_geometry() %>% 
+  filter(!is.na(station_name)) %>%
+  dplyr::select(station_name, pm25) %>% 
+  arrange(desc(pm25)) %>% 
+  rename(Station = station_name,
+         `Luftqualität (PM2.5)` = pm25) %>%
+  kbl()
+```
+
+:::
+
+
+## 🌳 Stadtgrün {.smaller .scrollable}
+
+::: panel-tabset
+
+### Karte
+<!-- Aufgrund der Datengröße zeigt diese Karte nur 2.000 von 18.000 Straßenbäumen, die in einem Radius von 500m um die Stationen stehen. -->
+
+```{r}
+# Import data
+trees <- readRDS(here::here("01_data", "2_processed", "trees.RDS"))
+
+# Geometry of trees
+tm_shape(sample_n(trees, 2000)) +
+    tm_dots(col = "darkgreen") +
+  
+  # + Geometry of the U3
+  tm_shape(gtfs_shapes_u3_lines) +
+    tm_lines(col = "yellow",
+             lwd = 6,
+             id = "") +
+  
+  # + Points of Stations
+  tm_shape(stations) + 
+    tm_dots(col = "black",
+            id = "station_name",
+            popup.vars = "stop_number") +
+
+  # + Some station names
+  tm_shape(stations[stations$station_name %in%
+                    c("Wandsbek-Gartenstadt", "Barmbek", "Hauptbahnhof Süd",
+                      "St.Pauli", "Schlump", "Kellinghusenstraße"),]) +
+   tm_text("station_name",
+           size = 1.1,
+           col = "black",
+           just = "bottom")
+```
+
+
+### Verlauf
+```{r}
+# Count the number of trees per station
+tree_per_station <- trees %>% 
+  st_drop_geometry() %>% 
+  filter(!is.na(station_name)) %>% 
+  group_by(station_name, stop_number) %>% 
+  tally() %>% 
+  arrange(desc(n)) %>% 
+  rename(trees = n)
+
+
+trees_station_plot <- station_plot(tree_per_station,
+                                   y_var = trees,
+                                   y_lab = "Anzahl Straßenbäume",
+                                   y_min = 0,
+                                   y_max = 1100) +
+  scale_y_continuous(labels = scales::number)
+
+ggplotly(trees_station_plot,
+         tooltip = "y") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+
+### Stationen
+```{r}
+tree_per_station %>% 
+  dplyr::select(station_name, trees) %>% 
+  rename(Station = station_name,
+         `Anzahl Straßenbäume` = trees) %>% 
+  kbl()
+```
+
+
+### Korrelation
+```{r}
+# Join data to previous summary stats around each station
+areas_around_stations <- left_join(x = areas_around_stations,
+                                   y = tree_per_station, 
+                                   by = "station_name")
+
+# Make graph
+corr_plot <- ggplot(areas_around_stations,
+       aes(x = avg_kinder_migration, y = trees, text = station_name)) +
+  geom_point() +
+  geom_text(data = filter(areas_around_stations,
+                          station_name == "Eppendorfer Baum" |
+                          station_name == "Mundsburg" |
+                          station_name == "Baumwall (Elbphilharmonie)" |
+                          station_name == "Hauptbahnhof Süd"),
+            aes(label = station_name),
+            nudge_y = 20) +
+  labs(x = "Kinder mit Migrationshintergrund (%)",
+       y = "Anzahl Straßenbäume\n um Haltestelle (500m Umkreis)") +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0.1, 0.9))
+
+ggplotly(corr_plot,
+         tooltip = "text") %>%
+  config(displayModeBar = FALSE) %>% 
+  layout()
+```
+
+:::
+
+
+## Fazit {.smaller}
+
+- Wir sehen große soziale Unterschiede entlang der U3
+- Sowohl bei wirtschaftlichen Faktoren, als auch bei Umweltqualität
+- …
+
+
+# `r fontawesome::fa("users", "white")` Abschlussrunde {background-color="#447099" transition="slide-in"}
+
+::: incremental
+- Was habt ihr gelernt?
+- Was nehmt ihr mit?
+- Gab es etwas das euch überrascht hat?
+- Gibt es etwas das euch noch beschäftigt?
+:::
+
+
+## Kontakt {.smaller}
+
+- Björn Bos, Universität Hamburg
+- bjoern.bos [at] uni-hamburg [punkt] de
+
+<br>
+
+- Folien: [https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/slides.html](https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/slides.html)
+- Essay: [https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/](https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/)
