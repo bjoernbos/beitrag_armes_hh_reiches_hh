@@ -8,6 +8,8 @@ Arm und Reich sind häufig nicht weit voneinander entfernt. Dieser Essay zeigt r
 
 [Zur interaktiven Website](https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/)
 
+[Zur Präsentation](https://bjoernbos.github.io/beitrag_armes_hh_reiches_hh/slides.html) (April 2023)
+
 
 ## Idee
 In Hamburg findet man in vielen Straßen prunkvolle Fassaden und Villen reihen sich an Alster und Elbe nebeneinander. Doch ist Hamburg damit reich? Und partizipieren alle Hamburger im gleichen Maß vom allgemein angenommen Wohlstand?
@@ -23,12 +25,13 @@ Die grundlegenden Daten stammen aus folgenden frei verfügbaren Quellen:
 
 * Und schließlich stammen die Koordinaten der Haltestellen der Linie U3, sowie deren Linienverlauf aus [GTFS Daten des Hamburg Verkehrsverbund](http://suche.transparenz.hamburg.de/dataset/hvv-fahrplandaten-gtfs-mai-2019-bis-dezember-2019).
 
+
 ## Reproduzierbarkeit
 Um die Analyse nachzuvollziehen und den Essay zu reproduzieren ist der gesamte Code in diesem Repository verfügbar. Er wurden unter `R 3.5.1` geschrieben und benötigt u.a. die Packages `tidyverse`, `sf` sowie `tmap`. Die jeweiligen Versionsnummer für diese Packages sowie Details zu weiteren Packages sind in der Datei `sessionInfo.txt` enthalten.
 
 Im Ordner `03_code` ist der Code zum Herunterladen der Daten, zur Datenaufbereitung, sowie zur Erstellung der Karten und Grafiken enthalten.
 
-Bei entsprechendem Betriebssystem und Konfiguration kann der Code und die interaktive Website auch über das Bash-Skript `build.sh` reproduziert werden.
+In einer entsprechenden Umgebung können das pdf, die interaktive Website und die Präsentation auch über das `Makefile` reproduziert werden.
 
 **Alternativ** kann der Beitrag auch über einen Dockercontainer reproduziert werden.
 
