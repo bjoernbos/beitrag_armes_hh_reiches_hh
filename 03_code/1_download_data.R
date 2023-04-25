@@ -9,21 +9,21 @@ if (!file.exists(here("01_data", "1_raw", "wfs_hh_statistische_gebiete.gml"))) {
   path_filename <- here("01_data", "1_raw", "hh_statistische_gebiete.zip")
   path <- here("01_data", "1_raw")
   
-  download.file(url, path_filename, method = "curl")
+  download.file(url, path_filename)
   unzip(path_filename, exdir = path)
-
+  
   file.remove(path_filename)
 }
 
 
 # Tables from the "Sozialmonitoring-Bericht 2018" ------------------------------
- if (!file.exists(here("01_data", "1_raw", "sozialmonitor_2018"))) {
+if (!file.exists(here("01_data", "1_raw", "sozialmonitor_2018"))) {
   
   url <- "http://suche.transparenz.hamburg.de/localresources/Upload_Intern/Upload_Intern9b1f40ca-c634-420b-a14c-bd931d6c3980/Upload__sozialmonitoring-bericht-2018_anhang-tabelle.zip"
   path_filename <- here("01_data", "1_raw", "sozialmonitor_2018.zip")
   path <- here("01_data", "1_raw")
   
-  download.file(url, path_filename, method = "curl")
+  download.file(url, path_filename)
   unzip(path_filename, exdir = path)
   
   file.rename(from = here("01_data", "1_raw", "Upload__sozialmonitoring-bericht-2018_anhang-tabelle"),
@@ -39,7 +39,7 @@ if (!file.exists(here("01_data", "1_raw", "bundestagswahl_2017_hh_erststimmme.cs
   url <- "https://www.statistik-nord.de/fileadmin/Dokumente/Wahlen/Hamburg/Bundestagswahlen/2017/Wahlergebnisse/endg%C3%BCltig/Download/e_23_BTW17_HH_Erst_WaBez.csv"
   path <- here("01_data", "1_raw", "bundestagswahl_2017_hh_erststimme.csv")
   
-  download.file(url, path, method = "curl")
+  download.file(url, path)
 }
 
 if (!file.exists(here("01_data", "1_raw", "bundestagswahl_2017_hh_zweitstimmme.csv"))) {
@@ -47,7 +47,7 @@ if (!file.exists(here("01_data", "1_raw", "bundestagswahl_2017_hh_zweitstimmme.c
   url <- "https://www.statistik-nord.de/fileadmin/Dokumente/Wahlen/Hamburg/Bundestagswahlen/2017/Wahlergebnisse/endg%C3%BCltig/Download/e_24_BTW17_HH_Zweit_WaBez.csv"
   path <- here("01_data", "1_raw", "bundestagswahl_2017_hh_zweitstimme.csv")
   
-  download.file(url, path, method = "curl")
+  download.file(url, path)
 }
 
 
@@ -58,7 +58,7 @@ if (!file.exists(here("01_data", "1_raw", "wahlbezirke_hh_2017"))) {
   path_filename <- here("01_data", "1_raw", "wahlbezirke_hh_2017.zip")
   dir.create(here("01_data", "1_raw", "wahlbezirke_hh_2017"))
   
-  download.file(url, path_filename, method = "curl")
+  download.file(url, path_filename)
   unzip(path_filename, exdir = here("01_data", "1_raw", "wahlbezirke_hh_2017"))
   
   file.remove(path_filename)
